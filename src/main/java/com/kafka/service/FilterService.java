@@ -1,27 +1,15 @@
 package com.kafka.service;
 
-import com.fasterxml.jackson.databind.JsonSerializer;
-import com.kafka.model.Counter;
-import com.kafka.model.Record;
-import com.kafka.serdes.CounterSerde;
+
 import com.kafka.serdes.RecordDeserializer;
 import com.kafka.serdes.RecordSerde;
 
-import com.spotify.docker.client.shaded.com.fasterxml.jackson.databind.JsonDeserializer;
-import com.spotify.docker.client.shaded.com.fasterxml.jackson.databind.JsonNode;
-import com.spotify.docker.client.shaded.com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.spotify.docker.client.shaded.com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
-import org.apache.kafka.common.serialization.Deserializer;
-import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.common.serialization.Serdes;
-import org.apache.kafka.common.serialization.Serializer;
-import org.apache.kafka.common.utils.Bytes;
 import org.apache.kafka.streams.KafkaStreams;
 import org.apache.kafka.streams.StreamsBuilder;
 import org.apache.kafka.streams.StreamsConfig;
 import org.apache.kafka.streams.kstream.*;
-import org.apache.kafka.streams.state.KeyValueStore;
 
 import java.util.Properties;
 
@@ -43,7 +31,6 @@ public class FilterService {
 
     public void start() {
         RecordSerde recordSerde = new RecordSerde();
-        CounterSerde counterSerde = new CounterSerde();
         Properties props = new Properties();
         props.put(StreamsConfig.APPLICATION_ID_CONFIG, "raw");
         props.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, "kafka:9092");
@@ -54,15 +41,12 @@ public class FilterService {
         final StreamsBuilder builder = new StreamsBuilder();
         builder.stream("raw", Consumed.with(Serdes.Long(),recordSerde))
                 .filter((k,v) -> {
-                    System.out.println(v.getMmsi());
                     return pointInRectangle(v.getLattitude(), v.getLongitude());
                 }).to("filtered");
 
         KafkaStreams streams = new KafkaStreams(builder.build(),props);
         streams.start();
     }
-
-
 
     public boolean pointInRectangle(Double x, Double y) {
         return x < topLeftLatitude && x > bottomRightLatitude && y < bottomRightLongitude && y > topLeftLongitude;
