@@ -20,6 +20,7 @@ import org.apache.kafka.common.utils.Bytes;
 import org.apache.kafka.streams.KafkaStreams;
 import org.apache.kafka.streams.StreamsBuilder;
 import org.apache.kafka.streams.StreamsConfig;
+import org.apache.kafka.streams.Topology;
 import org.apache.kafka.streams.kstream.*;
 import org.apache.kafka.streams.state.KeyValueStore;
 
@@ -43,55 +44,55 @@ public class FilterService {
 
     public void start() {
         RecordSerde recordSerde = new RecordSerde();
-        CounterSerde counterSerde = new CounterSerde();
         Properties props = new Properties();
         props.put(StreamsConfig.APPLICATION_ID_CONFIG, "raw");
-        props.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, "kafka:9092");
+        props.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, "192.168.1.229:9092");
         props.setProperty(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, RecordDeserializer.class.getName());
         props.setProperty(StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG, Serdes.Long().getClass().getName());
         props.setProperty(StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG, RecordSerde.class.getName());
 
 
         final StreamsBuilder builder = new StreamsBuilder();
-//        builder.stream("raw", Consumed.with(Serdes.String(),recordSerde))
-//                .filter((k,v) -> {
-//                    System.out.println(v.getMmsi());
-//                    return pointInRectangle(v.getLattitude(), v.getLongitude());
-//                }).to("filtered");
-
-        KGroupedStream<Long, Record> groupedStream = builder.stream("raw", Consumed.with(Serdes.Long(),recordSerde))
+        builder.stream("raw", Consumed.with(Serdes.Long(),recordSerde))
                 .filter((k,v) -> {
-                    System.out.println(v.getMmsi());
                     return pointInRectangle(v.getLattitude(), v.getLongitude());
                 })
-                .groupByKey();
+                .to("filtered", Produced.with(Serdes.Long(), recordSerde));
 
+//        KTable<Long,Double> average = builder.stream("raw", Consumed.with(Serdes.Long(),recordSerde))
+//                .filter((k,v) -> {
+//                    return pointInRectangle(v.getLattitude(), v.getLongitude());
+//                })
+//                .groupByKey()
+////                .windowedBy(TimeWindows.of(1 * 1 * 1000))
+//                .aggregate(
+//                new Initializer<Counter>() {
+//                    @Override
+//                    public Counter apply() {
+//                        System.out.println("Initializing");
+//                        return new Counter(0l, 0d);
+//                    }
+//                },
+//                new Aggregator<Long, Record, Counter>() {
+//                    @Override
+//                    public Counter apply(final Long key, final Record value, final Counter counter) {
+//                        ++counter.count;
+//                        counter.value += value.getSpeed();
+//                        System.out.println("applying");
+//                        return counter;
+//                    }
+//                }, Materialized.<Long, Counter, KeyValueStore<Bytes, byte[]>>as("counts-store"))
+//                .mapValues(new ValueMapper<Counter, Double>() {
+//                            @Override
+//                            public Double apply(Counter value) {
+//                                return value.value / (double) value.count;
+//                            }
+//                        });
+//
+//        average.toStream().print(Printed.toSysOut());
 
-        final KTable<Long,Counter> countAndSum  = groupedStream.aggregate(
-                new Initializer<Counter>() {
-                    @Override
-                    public Counter apply() {
-                        return new Counter(0l, 0d);
-                    }
-                },
-                new Aggregator<Long, Record, Counter>() {
-                    @Override
-                    public Counter apply(final Long key, final Record value, final Counter counter) {
-                        ++counter.count;
-                        counter.value += value.getSpeed();
-                        return counter;
-                    }
-                }, Materialized.<Long, Counter, KeyValueStore<Bytes, byte[]>>as("counts-store"));
-
-        final KTable<Long,Double> average =  countAndSum.mapValues(new ValueMapper<Counter, Double>() {
-                            @Override
-                            public Double apply(Counter value) {
-                                return value.value / (double) value.count;
-                            }
-                        });
-
-        average.toStream().print(Printed.toSysOut());
-        KafkaStreams streams = new KafkaStreams(builder.build(),props);
+        Topology topology = builder.build();
+        KafkaStreams streams = new KafkaStreams(topology,props);
         streams.start();
 
     }

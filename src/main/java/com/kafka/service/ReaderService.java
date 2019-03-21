@@ -7,6 +7,7 @@ import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.serialization.LongSerializer;
 import org.apache.kafka.common.serialization.StringSerializer;
+import org.apache.kafka.streams.StreamsConfig;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -24,7 +25,8 @@ public class ReaderService {
             br.readLine();
 
             Properties props = new Properties();
-            props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "kafka:9092");
+            props.put(StreamsConfig.APPLICATION_ID_CONFIG, "filtered");
+            props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "192.168.1.229:9092");
             props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, LongSerializer.class.getName());
             props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, RecordSerializer.class.getName());
 
@@ -39,7 +41,7 @@ public class ReaderService {
             producer.flush();
             producer.close(10000, TimeUnit.MILLISECONDS);
         } catch (IOException e) {
-            e.printStackTrace();
+            System.out.println(e);
         }
     }
 }
