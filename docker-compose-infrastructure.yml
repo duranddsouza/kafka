@@ -1,0 +1,33 @@
+version: "2"
+
+services:
+  kafkaserver:
+    image: "spotify/kafka:latest"
+    container_name: kafka
+    hostname: kafkaserver
+    networks:
+      - kafkanet
+    ports:
+      - 2181:2181
+      - 9092:9092
+    environment:
+      ADVERTISED_HOST: kafka
+      ADVERTISED_PORT: 9092
+    command: >
+      bash -c
+      "(sleep 2s &&
+      /opt/kafka_2.11-0.10.1.0/bin/kafka-topics.sh
+      --create
+      --zookeeper
+      localhost:2181 --replication-factor 1 --partitions 1
+      --topic raw &) &&
+      (sleep 2s &&
+      /opt/kafka_2.11-0.10.1.0/bin/kafka-topics.sh
+      --create
+      --zookeeper
+      localhost:2181 --replication-factor 1 --partitions 1
+      --topic filtered &) && (supervisord -n)"
+
+networks:
+  kafkanet:
+    driver: bridge

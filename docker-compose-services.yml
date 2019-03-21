@@ -1,0 +1,12 @@
+version: "2"
+
+services:
+  demoserver:
+    image: "duranddsouza03/demo:1.0-SNAPSHOT"
+    container_name: demo
+    hostname: demoserver
+
+networks:
+  default:
+    external:
+      name: demo_kafkanet
