@@ -52,7 +52,7 @@ public class FilterService {
         props.setProperty(StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG, RecordSerde.class.getName());
 
         final StreamsBuilder builder = new StreamsBuilder();
-        builder.stream("raw", Consumed.with(Serdes.String(),recordSerde))
+        builder.stream("raw", Consumed.with(Serdes.Long(),recordSerde))
                 .filter((k,v) -> {
                     System.out.println(v.getMmsi());
                     return pointInRectangle(v.getLattitude(), v.getLongitude());

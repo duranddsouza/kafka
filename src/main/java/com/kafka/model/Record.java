@@ -1,10 +1,8 @@
 package com.kafka.model;
 
 
-import java.time.LocalDateTime;
-
 public class Record {
-    private LocalDateTime recordTime;
+    private String recordTime;
     private Double lattitude;
     private Double longitude;
     private Long mmsi;
@@ -15,7 +13,7 @@ public class Record {
 
     public Record() {}
 
-    public Record(LocalDateTime recordTime, Double lattitude, Double longitude, Long mmsi, String heading, Double rateOfTurn, Double speed, Long status) {
+    public Record(String recordTime, Double lattitude, Double longitude, Long mmsi, String heading, Double rateOfTurn, Double speed, Long status) {
         this.recordTime = recordTime;
         this.lattitude = lattitude;
         this.longitude = longitude;
@@ -27,7 +25,7 @@ public class Record {
     }
 
     public Record(String [] data) {
-        this.recordTime = LocalDateTime.parse(data[0]);
+        this.recordTime = data[0];
         this.longitude = Double.valueOf(data[1]);
         this.lattitude = Double.valueOf(data[2]);
         this.mmsi = Long.valueOf(data[3]);
@@ -37,7 +35,7 @@ public class Record {
         this.status = Long.valueOf(data[7]);
     }
 
-    public LocalDateTime getRecordTime() {
+    public String getRecordTime() {
         return recordTime;
     }
 
