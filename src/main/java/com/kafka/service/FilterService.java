@@ -51,49 +51,15 @@ public class FilterService {
         props.setProperty(StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG, Serdes.Long().getClass().getName());
         props.setProperty(StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG, RecordSerde.class.getName());
 
-
         final StreamsBuilder builder = new StreamsBuilder();
-//        builder.stream("raw", Consumed.with(Serdes.String(),recordSerde))
-//                .filter((k,v) -> {
-//                    System.out.println(v.getMmsi());
-//                    return pointInRectangle(v.getLattitude(), v.getLongitude());
-//                }).to("filtered");
-
-        KGroupedStream<Long, Record> groupedStream = builder.stream("raw", Consumed.with(Serdes.Long(),recordSerde))
+        builder.stream("raw", Consumed.with(Serdes.String(),recordSerde))
                 .filter((k,v) -> {
                     System.out.println(v.getMmsi());
                     return pointInRectangle(v.getLattitude(), v.getLongitude());
-                })
-                .groupByKey();
+                }).to("filtered");
 
-
-        final KTable<Long,Counter> countAndSum  = groupedStream.aggregate(
-                new Initializer<Counter>() {
-                    @Override
-                    public Counter apply() {
-                        return new Counter(0l, 0d);
-                    }
-                },
-                new Aggregator<Long, Record, Counter>() {
-                    @Override
-                    public Counter apply(final Long key, final Record value, final Counter counter) {
-                        ++counter.count;
-                        counter.value += value.getSpeed();
-                        return counter;
-                    }
-                }, Materialized.<Long, Counter, KeyValueStore<Bytes, byte[]>>as("counts-store"));
-
-        final KTable<Long,Double> average =  countAndSum.mapValues(new ValueMapper<Counter, Double>() {
-                            @Override
-                            public Double apply(Counter value) {
-                                return value.value / (double) value.count;
-                            }
-                        });
-
-        average.toStream().print(Printed.toSysOut());
         KafkaStreams streams = new KafkaStreams(builder.build(),props);
         streams.start();
-
     }
 
 
